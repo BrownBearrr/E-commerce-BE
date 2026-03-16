@@ -30,7 +30,7 @@ public class Category {
     @Column(nullable = false)
     private String description ;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL) ///  cascade có tác dụng tự động lưu các CategoryTypes khi lưu Category
     private List<CategoryType> categoryTypes;
 
 

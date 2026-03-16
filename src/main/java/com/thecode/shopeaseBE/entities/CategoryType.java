@@ -1,5 +1,6 @@
 package com.thecode.shopeaseBE.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,6 +32,7 @@ public class CategoryType {
 
     @ManyToOne
     @JoinColumn(name = "category_id",nullable = false)
+    @JsonIgnore // Để tránh vòng lặp vô hạn khi serializing đối tượng CategoryType thành JSON, chúng ta sử dụng @JsonIgnore để bỏ qua trường category khi serializing. Điều này giúp ngăn chặn việc gọi đệ quy giữa CategoryType và Category, tránh lỗi StackOverflowError.
     private Category category ;
 
 }
