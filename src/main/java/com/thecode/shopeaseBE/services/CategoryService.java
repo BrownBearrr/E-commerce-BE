@@ -9,62 +9,60 @@ import com.thecode.shopeaseBE.repositories.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class CategoryService {
 
     @Autowired
-    private CategoryRepository categoryRepository ;
+    private CategoryRepository categoryRepository;
 
     public Category getCategory(UUID categoryId) {
-        Optional<Category> category = categoryRepository.findById(categoryId) ;
-        return category.orElse(null) ;
+        Optional<Category> category = categoryRepository.findById(categoryId);
+        return category.orElse(null);
     }
 
     public Category createCategory(CategoryDto categoryDto) {
-       Category category = mapToEntity(categoryDto) ;
-       return categoryRepository.save(category) ;
+        Category category = mapToEntity(categoryDto);
+        return categoryRepository.save(category);
     }
 
 
-    private Category mapToEntity (CategoryDto categoryDto) {
+    private Category mapToEntity(CategoryDto categoryDto) {
         Category category = Category.builder()
                 .code(categoryDto.getCode())
                 .name(categoryDto.getName())
                 .description(categoryDto.getDescription())
-                .build() ;
+                .build();
 
-        if(null != categoryDto.getCategoryTypeList()) {
-            List<CategoryType> categoryTypes = mapToCategyTypesList(categoryDto.getCategoryTypeList(),category) ;
+        if (null != categoryDto.getCategoryTypes()) {
+            List<CategoryType> categoryTypes = mapToCategyTypesList(categoryDto.getCategoryTypes(), category);
             category.setCategoryTypes(categoryTypes);
         }
 
-        return category ;
+        return category;
     }
 
-    private List<CategoryType> mapToCategyTypesList(List<CategoryTypeDto> categoryTypeList , Category category) {
+    private List<CategoryType> mapToCategyTypesList(List<CategoryTypeDto> categoryTypeList, Category category) {
         return categoryTypeList.stream().map(categoryTypeDto -> {
-            CategoryType categoryType = new CategoryType() ;
+            CategoryType categoryType = new CategoryType();
             categoryType.setCode(categoryTypeDto.getCode());
             categoryType.setDescription(categoryTypeDto.getDescription());
             categoryType.setName(categoryTypeDto.getName());
             categoryType.setCategory(category);
-            return categoryType ;
-        }).collect(Collectors.toList()) ;
+            return categoryType;
+        }).collect(Collectors.toList());
     }
 
     public List<Category> getAllCategory() {
-        List<Category> categoryList = categoryRepository.findAll() ;
-        return categoryList ;
+        List<Category> categoryList = categoryRepository.findAll();
+        return categoryList;
     }
 
-    public Category updateCategory(CategoryDto categoryDto , UUID categoryId) {
+    public Category updateCategory(CategoryDto categoryDto, UUID categoryId) {
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundEx("Category not found with id: " + categoryDto.getId())) ;
+                .orElseThrow(() -> new ResourceNotFoundEx("Category not found with id: " + categoryId));
         if (categoryDto.getName() != null) {
             category.setName(categoryDto.getName());
         }
@@ -74,15 +72,36 @@ public class CategoryService {
         if (categoryDto.getDescription() != null) {
             category.setDescription(categoryDto.getDescription());
         }
-        if (categoryDto.getCategoryTypeList() != null) {
-            List<CategoryType> categoryTypes = mapToCategyTypesList(categoryDto.getCategoryTypeList(), category);
-            category.setCategoryTypes(categoryTypes);
+        List<CategoryType> existing = category.getCategoryTypes();
+        List<CategoryType> categoryTypes = new ArrayList<>();
+
+        if (categoryDto.getCategoryTypes() != null) {
+            categoryDto.getCategoryTypes().stream().forEach(categoryTypeDto -> {
+                if (categoryTypeDto.getId() != null) {
+                    Optional<CategoryType> categoryType = existing.stream().filter(t -> t.getId().equals(categoryTypeDto.getId())).findFirst();
+                    CategoryType categoryType1 = categoryType
+                            .orElseThrow(() -> new RuntimeException("CategoryType not found with id " + categoryTypeDto.getId()  ));
+                    categoryType1.setCode(categoryTypeDto.getCode());
+                    categoryType1.setDescription(categoryTypeDto.getDescription());
+                    categoryType1.setName(categoryTypeDto.getName());
+                    categoryTypes.add(categoryType1);
+                } else {
+                    CategoryType categoryType = new CategoryType();
+                    categoryType.setCode(categoryTypeDto.getCode());
+                    categoryType.setDescription(categoryTypeDto.getDescription());
+                    categoryType.setName(categoryTypeDto.getName());
+                    categoryType.setCategory(category);
+                    categoryTypes.add(categoryType);
+                }
+            });
         }
-        Category categoryUpdate = categoryRepository.save(category) ;
-        return categoryUpdate ;
+        category.setCategoryTypes(categoryTypes);
+        Category categoryUpdate = categoryRepository.save(category);
+        return categoryUpdate;
     }
 
     public void deleteCategory(UUID categoryId) {
-        categoryRepository.deleteById(categoryId); ;
+        categoryRepository.deleteById(categoryId);
+        ;
     }
 }
